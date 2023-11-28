@@ -14,4 +14,9 @@ public struct GameDefine
     /// 玩家数量
     /// </summary>
     public const int PlayerCount = 4;
+    
+    /// <summary>
+    /// 麻将间间隔
+    /// </summary>
+    public const int MahjongInterval = 7;
 }

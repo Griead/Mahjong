@@ -19,3 +19,11 @@ public class MahjongConfig
     /// <summary> 加载路径 </summary>
     public string LoadPath;
 }
+    
+/// <summary>
+/// 玩家数据
+/// </summary>
+public class PlayerData
+{
+    
+}
