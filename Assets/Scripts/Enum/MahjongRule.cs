@@ -20,10 +20,22 @@ public enum MahjongOwnType
     Right
 }
 
+public enum MahjongLockType
+{
+    None,
+    /// <summary> 碰 </summary>
+    Pair,
+    /// <summary> 吃 </summary>
+    Order,
+    /// <summary> 杠 </summary>
+    Bar,
+    /// <summary> 暗杠 </summary>
+    HiddenBar,
+}
+
 public enum MahjongProgressType
 {
     Prepare,
-    //Dice,
     Start,
     End,
 }

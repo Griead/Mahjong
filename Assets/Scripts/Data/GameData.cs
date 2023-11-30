@@ -14,4 +14,6 @@ public class MahjongData
     }
     
     public MahjongOwnType Own;
+
+    public MahjongLockType Lock;
 }
