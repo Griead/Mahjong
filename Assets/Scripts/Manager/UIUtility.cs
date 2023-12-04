@@ -40,7 +40,7 @@ public static class UIUtility
             return;
         
         GameObject model = null;
-        if (LoadModelDict.ContainsKey(UIType.HuUI))
+        if (LoadModelDict.ContainsKey(type))
             model = LoadModelDict[type];
         else
         {

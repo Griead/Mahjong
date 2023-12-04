@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 4209990776527436481}
   m_Layer: 0
   m_Name: Wind_West
-  m_TagString: Majhong
+  m_TagString: Mahjong
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

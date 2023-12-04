@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 public class GameData
 {
     public MahjongOwnType SuccessPlayer;
@@ -16,4 +18,16 @@ public class MahjongData
     public MahjongOwnType Own;
 
     public MahjongLockType Lock;
+}
+
+/// <summary>
+/// 麻将锁定数据
+/// </summary>
+public class MahjongLockData
+{
+    public List<MahjongItem> MahjongList;
+
+    public MahjongLockType LockType;
+
+    public MahjongOwnType OwnType;
 }

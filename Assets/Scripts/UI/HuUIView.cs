@@ -25,15 +25,15 @@ public class HuUIView : BaseUIView
 
     private void Cancel()
     {
-        GameProgress.UIChoiceResult = false;
+        GameProgress.ChoiceResult = false;
         
-        GameProgress.UIChoiceOver = true;
+        GameProgress.ChoiceOver = true;
     }
 
     private void Confirm()
     {
-        GameProgress.UIChoiceResult = true;
+        GameProgress.ChoiceResult = true;
         
-        GameProgress.UIChoiceOver = true;
+        GameProgress.ChoiceOver = true;
     }
 }

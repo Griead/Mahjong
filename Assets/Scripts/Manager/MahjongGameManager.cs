@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Microsoft.Win32.SafeHandles;
+using TMPro;
 using Unity.Collections;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -18,9 +20,19 @@ public class MahjongGameManager : MonoBehaviour
     /// </summary>
     public List<Transform> CreateRootList;
     /// <summary>
+    /// 弃牌生成父级
+    /// </summary>
+    public List<Transform> DiscardRootList;
+    /// <summary>
+    /// 锁定节点列表
+    /// </summary>
+    public List<Transform> LockRootList;
+    /// <summary>
     /// UI视图
     /// </summary>
     public Canvas UICanvas;
+
+    public TextMeshPro MahjongRemainText;
     
     //----------------------------
     [HideInInspector]
@@ -33,12 +45,25 @@ public class MahjongGameManager : MonoBehaviour
 
     [HideInInspector]
     public List<MahjongItem> OwnMahjongList;
+    
     [HideInInspector]
     public List<MahjongItem> LeftMahjongList;
+    
     [HideInInspector]
     public List<MahjongItem> OppoMahjongList;
+    
     [HideInInspector]
     public List<MahjongItem> RightMahjongList;
+    
+    /// <summary>
+    /// 弃牌字典
+    /// </summary>
+    private Dictionary<MahjongOwnType, List<MahjongItem>> CacheDiscardDict;
+    
+    /// <summary>
+    /// 锁定数据
+    /// </summary>
+    private Dictionary<MahjongOwnType, List<MahjongLockData>> CacheLockDict;
     
     public void Awake()
     {
@@ -72,6 +97,9 @@ public class MahjongGameManager : MonoBehaviour
 
         LoadMahjongDictionary = new Dictionary<string, GameObject>();
         MahjongItemList = new List<MahjongItem>();
+        CacheDiscardDict = new Dictionary<MahjongOwnType, List<MahjongItem>>();
+        CacheLockDict = new Dictionary<MahjongOwnType, List<MahjongLockData>>();
+        
         var MahjongConfigList = new List<MahjongConfig>();
         switch (mahjongRule)
         {
@@ -192,7 +220,7 @@ public class MahjongGameManager : MonoBehaviour
     /// </summary>
     /// <param name="ownType"></param>
     /// <param name="newItem"></param>
-    private void SortAndRelocationMahjong(MahjongOwnType ownType)
+    public void SortAndRelocationMahjong(MahjongOwnType ownType)
     {
         var modelList = new List<MahjongItem>();
         switch (ownType)
@@ -342,7 +370,7 @@ public class MahjongGameManager : MonoBehaviour
     /// </summary>
     /// <param name="mahjongConfigList"></param>
     /// <returns></returns>
-    private List<MahjongConfig> SortMahjongConfig(List<MahjongConfig> mahjongConfigList)
+    public List<MahjongConfig> SortMahjongConfig(List<MahjongConfig> mahjongConfigList)
     {
         for (int i = mahjongConfigList.Count - 1; i > 0; i--)
         {
@@ -352,35 +380,181 @@ public class MahjongGameManager : MonoBehaviour
 
         return mahjongConfigList;
     }
+    /// <summary>
+    /// 弃牌麻将
+    /// </summary>
+    /// <param name="mahjongOwnType"></param>
+    /// <param name="mahjongItem"></param>
+    public void DiscardMahjongItem(MahjongOwnType mahjongOwnType, MahjongItem mahjongItem)
+    {
+        CacheDiscardDict.TryGetValue(mahjongOwnType, out var discardList);
+
+        int discardListCount = discardList?.Count ?? 0;
+
+        if (discardList == null)
+            CacheDiscardDict.Add(mahjongOwnType, new List<MahjongItem>());
+        CacheDiscardDict[mahjongOwnType].Add(mahjongItem);
+        
+        var root = GetDiscardMahjongVector3(mahjongOwnType, discardListCount); 
+        
+        mahjongItem.transform.SetParent(root);
+        mahjongItem.transform.localPosition = Vector3.zero;
+        mahjongItem.transform.localRotation = Quaternion.identity;
+    }
+
+    public Transform GetDiscardMahjongVector3(MahjongOwnType mahjongOwnType, int Index)
+    {
+       return DiscardRootList[(int)mahjongOwnType - 1].GetChild(Index);
+    }
+
+    /// <summary>
+    /// 锁定麻将列表
+    /// </summary>
+    /// <param name="mahjongOwnType"></param>
+    /// <param name="mahjongList"></param>
+    public void AddLockMahjongList(MahjongOwnType mahjongOwnType, List<MahjongItem> mahjongList, MahjongLockType lockType)
+    {
+        List<MahjongItem> tempMahjongList = null;
+        switch (mahjongOwnType)
+        {
+            case MahjongOwnType.Own:
+            {
+                tempMahjongList = OwnMahjongList;
+                break;
+            }
+            case MahjongOwnType.Left:
+            {
+                tempMahjongList = LeftMahjongList;
+                break;
+            }
+            case MahjongOwnType.Oppo:
+            {
+                tempMahjongList = OppoMahjongList;
+                break;
+            }
+            case MahjongOwnType.Right:
+            {
+                tempMahjongList = RightMahjongList;
+                break;
+            }
+        }
+
+        for (int i = 0; i < mahjongList.Count; i++)
+        {
+            if(tempMahjongList != null && tempMahjongList.Contains(mahjongList[i]))
+                tempMahjongList.Remove(mahjongList[i]);
+        }
+
+        MahjongLockData lockData = new MahjongLockData()
+            { MahjongList = mahjongList, OwnType = mahjongOwnType, LockType = lockType };
+        int Index = 0;
+        if (CacheLockDict.ContainsKey(mahjongOwnType))
+        {
+            Index = CacheLockDict[mahjongOwnType].Count;
+            CacheLockDict[mahjongOwnType].Add(lockData);
+        }
+        else
+        {
+            Index = 0;
+            CacheLockDict.Add(mahjongOwnType, new List<MahjongLockData>(){lockData});
+        }
+
+        ShowLockData(lockData, Index);
+    }
+
+    /// <summary>
+    /// 展示锁定数据
+    /// </summary>
+    public void ShowLockData(MahjongLockData lockData, int Index)
+    {
+        Debug.Log($"{lockData.OwnType}、{lockData.LockType}、{Index}");
+        
+        Transform root = LockRootList[(int)lockData.OwnType - 1].GetChild(Index);
+        switch (lockData.LockType)
+        {
+            case MahjongLockType.Pair:
+            {
+                lockData.MahjongList[0].transform.SetParent(root);
+                lockData.MahjongList[0].transform.localPosition = new Vector3(-7, 0, 0);
+                lockData.MahjongList[0].transform.localEulerAngles = Vector3.zero;
+                lockData.MahjongList[0].transform.localScale = Vector3.one; 
+                lockData.MahjongList[1].transform.SetParent(root);
+                lockData.MahjongList[1].transform.localPosition = new Vector3(0, 0, 0);
+                lockData.MahjongList[1].transform.localEulerAngles = Vector3.zero;
+                lockData.MahjongList[1].transform.localScale = Vector3.one; 
+                lockData.MahjongList[2].transform.SetParent(root);
+                lockData.MahjongList[2].transform.localPosition = new Vector3(7, 0, 0);
+                lockData.MahjongList[2].transform.localEulerAngles = Vector3.zero;
+                lockData.MahjongList[2].transform.localScale = Vector3.one; 
+                break;
+            }
+            case MahjongLockType.Order:
+            {
+                lockData.MahjongList[0].transform.SetParent(root);
+                lockData.MahjongList[0].transform.localPosition = new Vector3(-7, 0, 0);
+                lockData.MahjongList[0].transform.localEulerAngles = Vector3.zero;
+                lockData.MahjongList[0].transform.localScale = Vector3.one; 
+                lockData.MahjongList[1].transform.SetParent(root);
+                lockData.MahjongList[1].transform.localPosition = new Vector3(0, 0, 0);
+                lockData.MahjongList[1].transform.localEulerAngles = Vector3.zero;
+                lockData.MahjongList[1].transform.localScale = Vector3.one; 
+                lockData.MahjongList[2].transform.SetParent(root);
+                lockData.MahjongList[2].transform.localPosition = new Vector3(7, 0, 0);
+                lockData.MahjongList[2].transform.localEulerAngles = Vector3.zero;
+                lockData.MahjongList[2].transform.localScale = Vector3.one; 
+                break;
+            }
+            case MahjongLockType.Bar:
+            {
+                lockData.MahjongList[0].transform.SetParent(root);
+                lockData.MahjongList[0].transform.localPosition = new Vector3(-7, 0, 0);
+                lockData.MahjongList[0].transform.localEulerAngles = Vector3.zero;
+                lockData.MahjongList[0].transform.localScale = Vector3.one; 
+                lockData.MahjongList[1].transform.SetParent(root);
+                lockData.MahjongList[1].transform.localPosition = new Vector3(0, 0, 0);
+                lockData.MahjongList[1].transform.localEulerAngles = Vector3.zero;
+                lockData.MahjongList[1].transform.localScale = Vector3.one; 
+                lockData.MahjongList[2].transform.SetParent(root);
+                lockData.MahjongList[2].transform.localPosition = new Vector3(7, 0, 0);
+                lockData.MahjongList[2].transform.localEulerAngles = Vector3.zero;
+                lockData.MahjongList[2].transform.localScale = Vector3.one; 
+                lockData.MahjongList[3].transform.SetParent(root);
+                lockData.MahjongList[3].transform.localPosition = new Vector3(0, 5, 0);
+                lockData.MahjongList[3].transform.localEulerAngles = Vector3.zero;
+                lockData.MahjongList[3].transform.localScale = Vector3.one; 
+                break;
+            }
+            case MahjongLockType.HiddenBar:
+            {
+                lockData.MahjongList[0].transform.SetParent(root);
+                lockData.MahjongList[0].transform.localPosition = new Vector3(-7, 0, 0);
+                lockData.MahjongList[0].transform.localEulerAngles = Vector3.zero;
+                lockData.MahjongList[0].transform.localScale = Vector3.one; 
+                lockData.MahjongList[1].transform.SetParent(root);
+                lockData.MahjongList[1].transform.localPosition = new Vector3(0, 0, 0);
+                lockData.MahjongList[1].transform.localEulerAngles = Vector3.zero;
+                lockData.MahjongList[1].transform.localScale = Vector3.one; 
+                lockData.MahjongList[2].transform.SetParent(root);
+                lockData.MahjongList[2].transform.localPosition = new Vector3(7, 0, 0);
+                lockData.MahjongList[2].transform.localEulerAngles = Vector3.zero;
+                lockData.MahjongList[2].transform.localScale = Vector3.one; 
+                lockData.MahjongList[3].transform.SetParent(root);
+                lockData.MahjongList[3].transform.localPosition = new Vector3(0, 5, 0);
+                lockData.MahjongList[3].transform.localEulerAngles = Vector3.zero;
+                lockData.MahjongList[3].transform.localScale = Vector3.one; 
+                break;
+            }
+        }
+    }
     
     // Update is called once per frame
     void Update()
     {
+        if(CurProgressType != MahjongProgressType.Start)
+            return;
         
-        // 检测鼠标点击或触摸
-        if (Input.GetMouseButtonDown(0) || (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began))
-        {
-            Vector3 inputPosition = Input.GetMouseButtonDown(0) ? Input.mousePosition : Input.GetTouch(0).position;
-
-            // 发射射线
-            Ray ray = Camera.main.ScreenPointToRay(inputPosition);
-            RaycastHit hit;
-
-            if (Physics.Raycast(ray, out hit))
-            {
-                // 如果点击到了一个对象
-                if (hit.collider.tag.Equals("Mahjong"))
-                {
-                    GameObject clickedObject = hit.collider.gameObject;
-                    var mahjongItem = clickedObject.GetComponent<MahjongItem>();
-                    if (mahjongItem.m_Data.Own == MahjongOwnType.Own && mahjongItem.m_Data.Lock == MahjongLockType.None)
-                    {
-                        //TODO 出牌
-                        Debug.Log("打出" + mahjongItem.m_Config.mahjongType + mahjongItem.m_Config.Id);
-                    }
-                }
-            }
-        }
+        MahjongRemainText.text = MahjongItemList.Count.ToString();
+        GameProgress.HitMahjongCheck();
     }
 
     public void StartProgress()

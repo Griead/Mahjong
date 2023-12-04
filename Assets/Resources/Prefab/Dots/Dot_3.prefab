@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 4985946151459239419}
   m_Layer: 0
   m_Name: Dot_3
-  m_TagString: Majhong
+  m_TagString: Mahjong
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: -9066469904527904731}
   m_Layer: 0
   m_Name: Crak_6
-  m_TagString: Majhong
+  m_TagString: Mahjong
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
