@@ -4,4 +4,8 @@ public enum UIType
     HuUI,
     /// <summary> 暗杠 </summary>
     HiddenBar,
+    /// <summary> 碰 </summary>
+    Pair,
+    /// <summary> 吃 </summary>
+    Order
 }

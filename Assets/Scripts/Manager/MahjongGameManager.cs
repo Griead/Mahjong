@@ -380,6 +380,18 @@ public class MahjongGameManager : MonoBehaviour
 
         return mahjongConfigList;
     }
+    
+    /// <summary>
+    /// 从弃牌堆中移除麻将
+    /// </summary>
+    public void RemoveDiscardMahjongItem(MahjongOwnType mahjongOwnType, MahjongItem mahjongItem)
+    {
+        if (CacheDiscardDict.ContainsKey(mahjongOwnType))
+        {
+            CacheDiscardDict[mahjongOwnType].Remove(mahjongItem);
+        }
+    }
+    
     /// <summary>
     /// 弃牌麻将
     /// </summary>
@@ -443,6 +455,11 @@ public class MahjongGameManager : MonoBehaviour
         {
             if(tempMahjongList != null && tempMahjongList.Contains(mahjongList[i]))
                 tempMahjongList.Remove(mahjongList[i]);
+            else
+            {
+                //不包含 则是从弃牌堆中拿的
+                // RemoveDiscardMahjongItem(CurFarmHouse, mahjongList[i]);
+            }
         }
 
         MahjongLockData lockData = new MahjongLockData()
@@ -460,6 +477,9 @@ public class MahjongGameManager : MonoBehaviour
         }
 
         ShowLockData(lockData, Index);
+        
+        //重新排列手中的排
+        SortAndRelocationMahjong(mahjongOwnType);
     }
 
     /// <summary>

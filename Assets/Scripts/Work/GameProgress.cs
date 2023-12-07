@@ -12,6 +12,8 @@ public static class GameProgress
     public static object ChoiceResult;
 
     public static bool ChoiceOver;
+
+    public static bool SkipTouchMahjong = false;
     
     public static IEnumerator ContinueProgress()
     {
@@ -26,30 +28,36 @@ public static class GameProgress
 
             Debug.Log("检测流局结束");
 
-            //摸牌
-            var mahjongList = GetCurTurnMahjongList(CurMahjongProgress);
-            var mahjongItem =
-                MahjongGameManager.Instance.MahjongItemList[MahjongGameManager.Instance.MahjongItemList.Count - 1];
-            //移除
-            MahjongGameManager.Instance.MahjongItemList.RemoveAt(MahjongGameManager.Instance.MahjongItemList.Count - 1);
-            //添加进手牌中 赋值临时位置
-            mahjongList.Add(mahjongItem);
-            mahjongItem.SetData(CurMahjongProgress, true);
-            Debug.Log("摸牌结束");
+            if (!SkipTouchMahjong)
+            {
+                //摸牌
+                var mahjongList = GetCurTurnMahjongList(CurMahjongProgress);
+                var mahjongItem =
+                    MahjongGameManager.Instance.MahjongItemList[MahjongGameManager.Instance.MahjongItemList.Count - 1];
+                //移除
+                MahjongGameManager.Instance.MahjongItemList.RemoveAt(MahjongGameManager.Instance.MahjongItemList.Count - 1);
+                //添加进手牌中 赋值临时位置
+                mahjongList.Add(mahjongItem);
+                mahjongItem.SetData(CurMahjongProgress, true);
+                Debug.Log("摸牌结束");
 
-            //TODO 检测 自摸
-            yield return CheckHuSelf(CurMahjongProgress);
+                //TODO 检测 自摸
+                yield return CheckHuSelf(CurMahjongProgress);
 
-            Debug.Log("检测自摸结束");
-            //TODO 检测 自身暗杠
-            yield return CheckHiddenBar(CurMahjongProgress);
-
-            Debug.Log("检测暗杠结束");
-            //TODO 出牌
-            yield return new WaitForSeconds(1);
+                Debug.Log("检测自摸结束");
+                //TODO 检测 自身暗杠
+                yield return CheckHiddenBar(CurMahjongProgress);
             
+                Debug.Log("检测暗杠结束");
+                
+            }
+
+            SkipTouchMahjong = false;
+            //TODO 出牌
             yield return HitMahjong(CurMahjongProgress);
 
+            yield return new WaitForSeconds(1);
+            
             //打出的麻将
             var hitMahjongItem = (MahjongItem)ChoiceResult;
             //检测点炮
@@ -65,16 +73,63 @@ public static class GameProgress
             yield return CheckHu((MahjongOwnType)nextThreeFarmHouse, hitMahjongItem);
 
             //检测所有方 碰 杠
+            
+            //下家
             yield return CheckBePair((MahjongOwnType)nextOneFarmHouse, hitMahjongItem);
-            yield return CheckBePair((MahjongOwnType)nextTwoFarmHouse, hitMahjongItem);
-            yield return CheckBePair((MahjongOwnType)nextThreeFarmHouse, hitMahjongItem);
-
+            if ((bool)ChoiceResult)
+            {
+                SkipTouchMahjong = true;
+                CurMahjongProgress = nextOneFarmHouse;
+                continue;
+            }
             yield return CheckBeBar((MahjongOwnType)nextOneFarmHouse, hitMahjongItem);
+            if ((bool)ChoiceResult)
+            {
+                SkipTouchMahjong = true;
+                CurMahjongProgress = nextOneFarmHouse;
+                continue;
+            }
+            
+            //对家
+            yield return CheckBePair((MahjongOwnType)nextTwoFarmHouse, hitMahjongItem);
+            if ((bool)ChoiceResult)
+            {
+                SkipTouchMahjong = true;
+                CurMahjongProgress = nextTwoFarmHouse;
+                continue;
+            }
             yield return CheckBeBar((MahjongOwnType)nextTwoFarmHouse, hitMahjongItem);
+            if ((bool)ChoiceResult)
+            {
+                SkipTouchMahjong = true;
+                CurMahjongProgress = nextTwoFarmHouse;
+                continue;
+            }
+            
+            //上家
+            yield return CheckBePair((MahjongOwnType)nextThreeFarmHouse, hitMahjongItem);
+            if ((bool)ChoiceResult)
+            {
+                SkipTouchMahjong = true;
+                CurMahjongProgress = nextThreeFarmHouse;
+                continue;
+            }
             yield return CheckBeBar((MahjongOwnType)nextThreeFarmHouse, hitMahjongItem);
+            if ((bool)ChoiceResult)
+            {
+                SkipTouchMahjong = true;
+                CurMahjongProgress = nextThreeFarmHouse;
+                continue;
+            }
 
             //检测 下家吃
             yield return CheckBeOrder((MahjongOwnType)nextOneFarmHouse, hitMahjongItem);
+            if ((bool)ChoiceResult)
+            {
+                SkipTouchMahjong = true;
+                CurMahjongProgress = nextOneFarmHouse;
+                continue;
+            }
 
             //出牌完毕 切换
             CurMahjongProgress = (MahjongOwnType)nextOneFarmHouse;
@@ -130,28 +185,19 @@ public static class GameProgress
         UIUtility.CloseUIView(UIType.HuUI);
     }
     
-    public static IEnumerator WaitUIChoiceHiddenBar()
-    {
-        //显示UI
-        UIUtility.LoadUIView<HuUIView>(UIType.HiddenBar, null);
 
-        ClearData();
-
-        while (!ChoiceOver)
-        {
-            yield return null;
-        }
-        
-        //隐藏UI
-        UIUtility.CloseUIView(UIType.HiddenBar);
-    }
 
     #endregion
 
     #region 检测暗杠
     
 
-
+    /// <summary>
+    /// 检测暗杠
+    /// </summary>
+    /// <param name="mahjongItemList"></param>
+    /// <param name="count"></param>
+    /// <returns></returns>
     public static List<MahjongItem> HasIdentical(List<MahjongItem> mahjongItemList, int count)
     {        
         var identicalGroups = mahjongItemList.GroupBy(m => new { m.m_Config.mahjongType, m.m_Config.Id })
@@ -380,7 +426,7 @@ public static class GameProgress
 
     #endregion
 
-    #region 检测被碰、被杠
+    #region 检测暗杠
     
     /// <summary>
     /// 检测暗杠
@@ -394,13 +440,50 @@ public static class GameProgress
         if (result != null)
         {
             //等待UI操作
-            yield return WaitUIChoiceHiddenBar();
+            if(belongType == MahjongOwnType.Own)
+                yield return WaitUIChoiceHiddenBar(result);
+            else
+                //执行暗杠
+                MahjongGameManager.Instance.AddLockMahjongList(belongType, mahjongList, MahjongLockType.HiddenBar);
+
         }
         
         
         yield break;
     }
+    
+    public static IEnumerator WaitUIChoiceHiddenBar(List<MahjongItem> mahjongList)
+    {
+        //显示UI
+        UIUtility.LoadUIView<HuUIView>(UIType.HiddenBar, null);
 
+        ClearData();
+
+        while (!ChoiceOver)
+        {
+            yield return null;
+        }
+
+        if ((bool)ChoiceResult)
+        {
+            //执行暗杠
+            MahjongGameManager.Instance.AddLockMahjongList(CurMahjongProgress, mahjongList, MahjongLockType.HiddenBar);
+        }
+        
+        //隐藏UI
+        UIUtility.CloseUIView(UIType.HiddenBar);
+    }
+
+    #endregion
+
+    #region 检测被碰
+    
+    /// <summary>
+    /// 检测碰
+    /// </summary>
+    /// <param name="belongType"></param>
+    /// <param name="mahjongItem"></param>
+    /// <returns></returns>
     private static IEnumerator CheckBePair(MahjongOwnType belongType, MahjongItem mahjongItem)
     {
         List<MahjongItem> CurMahjongList = GetCurTurnMahjongList(belongType);
@@ -408,12 +491,42 @@ public static class GameProgress
         if (result != null)
         {
             //有碰
-            MahjongGameManager.Instance.AddLockMahjongList(belongType, result, MahjongLockType.Pair);
+            if(belongType == MahjongOwnType.Own)
+                yield return WaitUIBePair(belongType, result);
+            else
+            {
+                ChoiceResult = true;
+                MahjongGameManager.Instance.AddLockMahjongList(belongType, result, MahjongLockType.Pair);
+            }
+                
         }
-        
-        
         yield break;
     }
+    
+    public static IEnumerator WaitUIBePair(MahjongOwnType belongType, List<MahjongItem> mahjongList)
+    {
+        //显示UI
+        UIUtility.LoadUIView<HuUIView>(UIType.Pair, null);
+
+        ClearData();
+
+        while (!ChoiceOver)
+        {
+            yield return null;
+        }
+
+        if ((bool)ChoiceResult)
+        {
+            //执行被碰
+            MahjongGameManager.Instance.AddLockMahjongList(belongType, mahjongList, MahjongLockType.Pair);
+        }
+        
+        //隐藏UI
+        UIUtility.CloseUIView(UIType.Pair);
+    }
+    #endregion
+
+    #region 检测杠
 
     private static IEnumerator CheckBeBar(MahjongOwnType belongType, MahjongItem mahjongItem)
     {
@@ -422,12 +535,41 @@ public static class GameProgress
         if (result != null)
         {
             //有杠
-            MahjongGameManager.Instance.AddLockMahjongList(belongType, result, MahjongLockType.Bar);
+            if(belongType == MahjongOwnType.Own)
+                yield return WaitUIBeBar(belongType, result);
+            else
+            {
+                ChoiceResult = true;
+                MahjongGameManager.Instance.AddLockMahjongList(belongType, result, MahjongLockType.Bar);
+            }
+                
         }
         
         yield break;
     }
+    
+    public static IEnumerator WaitUIBeBar(MahjongOwnType belongType, List<MahjongItem> mahjongList)
+    {
+        //显示UI
+        UIUtility.LoadUIView<HuUIView>(UIType.HiddenBar, null);
 
+        ClearData();
+
+        while (!ChoiceOver)
+        {
+            yield return null;
+        }
+
+        if ((bool)ChoiceResult)
+        {
+            //执行被碰
+            MahjongGameManager.Instance.AddLockMahjongList(belongType, mahjongList, MahjongLockType.Bar);
+        }
+        
+        //隐藏UI
+        UIUtility.CloseUIView(UIType.HiddenBar);
+    }
+    
     #endregion
 
     #region 检测被吃
@@ -438,10 +580,37 @@ public static class GameProgress
         if (result != null)
         {
             //有吃
-            MahjongGameManager.Instance.AddLockMahjongList(belongType, result, MahjongLockType.Order);
+            if(belongType == MahjongOwnType.Own)
+                yield return WaitUIBeOrder(belongType, result);
+            else
+            {
+                ChoiceResult = true;
+                MahjongGameManager.Instance.AddLockMahjongList(belongType, result, MahjongLockType.Order);
+            }
         }
         
         yield break;
+    }
+    
+    public static IEnumerator WaitUIBeOrder(MahjongOwnType belongType, List<MahjongItem> mahjongList)
+    {
+        //显示UI
+        UIUtility.LoadUIView<HuUIView>(UIType.Order, null);
+
+        ClearData();
+
+        while (!ChoiceOver)
+        {
+            yield return null;
+        }
+
+        if ((bool)ChoiceResult)
+        {
+            MahjongGameManager.Instance.AddLockMahjongList(belongType, mahjongList, MahjongLockType.Order);
+        }
+        
+        //隐藏UI
+        UIUtility.CloseUIView(UIType.Order);
     }
 
     #endregion
