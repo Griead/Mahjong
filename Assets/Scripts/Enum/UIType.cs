@@ -1,5 +1,6 @@
 public enum UIType
 {
+    StartUI,
     /// <summary> 胡牌 </summary>
     HuUI,
     /// <summary> 暗杠 </summary>

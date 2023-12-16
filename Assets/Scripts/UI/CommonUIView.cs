@@ -1,7 +1,7 @@
 using UnityEngine.TerrainTools;
 using UnityEngine.UI;
 
-public class HuUIView : BaseUIView
+public class CommonUIView : BaseUIView
 {
     private Button CancelBtn;
     private Button ConfirmBtn;

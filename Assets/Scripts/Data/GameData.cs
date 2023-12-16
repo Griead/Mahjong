@@ -16,7 +16,7 @@ public class MahjongData
     }
     
     public MahjongOwnType Own;
-
+    
     public MahjongLockType Lock;
 }
 
@@ -30,4 +30,14 @@ public class MahjongLockData
     public MahjongLockType LockType;
 
     public MahjongOwnType OwnType;
+
+    public void ReleaseAsset()
+    {
+        for (int i = 0; i < MahjongList.Count; i++)
+        {
+            MahjongList[i].ReleaseAsset();
+        }
+        
+        MahjongList.Clear();
+    }
 }

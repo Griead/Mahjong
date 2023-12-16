@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 public class MahjongItem : MonoBehaviour
 {
@@ -26,4 +27,10 @@ public class MahjongItem : MonoBehaviour
         transform.localPosition = IsTempPos ? MahjongGameManager.Instance.GetMahjongTempVector3() : MahjongGameManager.Instance.GetDivideMahjongVector3(ownType);
         transform.localRotation = Quaternion.identity;
     }
+
+    public void ReleaseAsset()
+    {
+        Object.Destroy(this.gameObject);
+    }
+    
 }

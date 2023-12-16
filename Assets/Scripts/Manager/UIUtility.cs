@@ -24,6 +24,7 @@ public static class UIUtility
         LoadPathUIDict.Add(UIType.HiddenBar, "UI/HiddenBarUI");
         LoadPathUIDict.Add(UIType.Pair, "UI/PairUI");
         LoadPathUIDict.Add(UIType.Order, "UI/OrderUI");
+        LoadPathUIDict.Add(UIType.StartUI, "UI/StartUI");
         
         LoadModelDict = new Dictionary<UIType, GameObject>();
         ViewUIDict = new Dictionary<UIType, BaseUIView>();

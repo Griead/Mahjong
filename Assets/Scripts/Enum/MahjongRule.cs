@@ -39,3 +39,9 @@ public enum MahjongProgressType
     Start,
     End,
 }
+
+public enum MahjongAudioType
+{
+    Woman,
+    Man
+}

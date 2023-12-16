@@ -12,6 +12,10 @@ public class MahjongGameManager : MonoBehaviour
     public static MahjongGameManager Instance;
     private Dictionary<string, GameObject> LoadMahjongDictionary;
     /// <summary>
+    /// 玩家回合
+    /// </summary>
+    public List<GameObject> PlayOwnList;
+    /// <summary>
     /// 庄家列表
     /// </summary>
     public List<GameObject> FarmHouseList;
@@ -43,27 +47,23 @@ public class MahjongGameManager : MonoBehaviour
     [HideInInspector]
     public List<MahjongItem> MahjongItemList;
 
-    [HideInInspector]
-    public List<MahjongItem> OwnMahjongList;
-    
-    [HideInInspector]
-    public List<MahjongItem> LeftMahjongList;
-    
-    [HideInInspector]
-    public List<MahjongItem> OppoMahjongList;
-    
-    [HideInInspector]
-    public List<MahjongItem> RightMahjongList;
-    
+    [HideInInspector] public List<MahjongItem> OwnMahjongList;
+
+    [HideInInspector] public List<MahjongItem> LeftMahjongList;
+
+    [HideInInspector] public List<MahjongItem> OppoMahjongList;
+
+    [HideInInspector] public List<MahjongItem> RightMahjongList;
+
     /// <summary>
     /// 弃牌字典
     /// </summary>
     private Dictionary<MahjongOwnType, List<MahjongItem>> CacheDiscardDict;
-    
+
     /// <summary>
     /// 锁定数据
     /// </summary>
-    private Dictionary<MahjongOwnType, List<MahjongLockData>> CacheLockDict;
+    [HideInInspector] public Dictionary<MahjongOwnType, List<MahjongLockData>> CacheLockDict;
     
     public void Awake()
     {
@@ -82,6 +82,14 @@ public class MahjongGameManager : MonoBehaviour
 
     private void Start()
     {
+        OwnMahjongList = new List<MahjongItem>();
+        LeftMahjongList = new List<MahjongItem>();
+        OppoMahjongList = new List<MahjongItem>();
+        RightMahjongList = new List<MahjongItem>();
+        LoadMahjongDictionary = new Dictionary<string, GameObject>();
+        CacheDiscardDict = new Dictionary<MahjongOwnType, List<MahjongItem>>();
+        CacheLockDict = new Dictionary<MahjongOwnType, List<MahjongLockData>>();
+        
         GamePrepare(MahjongRule.ShenYang);
     }
     
@@ -90,15 +98,11 @@ public class MahjongGameManager : MonoBehaviour
     /// </summary>
     private void GamePrepare(MahjongRule mahjongRule)
     {
-        OwnMahjongList = new List<MahjongItem>();
-        LeftMahjongList = new List<MahjongItem>();
-        OppoMahjongList = new List<MahjongItem>();
-        RightMahjongList = new List<MahjongItem>();
+        CurProgressType = MahjongProgressType.Prepare;
 
-        LoadMahjongDictionary = new Dictionary<string, GameObject>();
-        MahjongItemList = new List<MahjongItem>();
-        CacheDiscardDict = new Dictionary<MahjongOwnType, List<MahjongItem>>();
-        CacheLockDict = new Dictionary<MahjongOwnType, List<MahjongLockData>>();
+        for (int i = 0; i < MahjongItemList.Count; i++)
+            MahjongItemList[i].ReleaseAsset();
+        MahjongItemList.Clear();
         
         var MahjongConfigList = new List<MahjongConfig>();
         switch (mahjongRule)
@@ -141,9 +145,73 @@ public class MahjongGameManager : MonoBehaviour
                 break;
             }
         }
-
-        CurProgressType = MahjongProgressType.Prepare;
+        
+        //开始页面
+        UIUtility.LoadUIView<StartUIView>(UIType.StartUI, null);
     }
+
+    public void ReStart()
+    {
+        UIUtility.CloseUIView(UIType.StartUI);
+        
+        ClearGameAll();
+        
+        GameStart();
+
+        StartProgress();
+    }
+
+    /// <summary>
+    /// 清理游戏所有麻将条目
+    /// </summary>
+    private void ClearGameAll()
+    {
+        for (int i = 0; i < OwnMahjongList.Count; i++)
+        {
+            OwnMahjongList[i].ReleaseAsset();
+        }
+        OwnMahjongList.Clear();
+        
+        for (int i = 0; i < LeftMahjongList.Count; i++)
+        {
+            LeftMahjongList[i].ReleaseAsset();
+        }
+        LeftMahjongList.Clear();
+        
+        for (int i = 0; i < OppoMahjongList.Count; i++)
+        {
+            OppoMahjongList[i].ReleaseAsset();
+        }
+        OppoMahjongList.Clear();
+        
+        for (int i = 0; i < RightMahjongList.Count; i++)
+        {
+            RightMahjongList[i].ReleaseAsset();
+        }
+        RightMahjongList.Clear();
+        
+        foreach (var mahjongOwnType in CacheDiscardDict.Keys)
+        {
+            for (int i = 0; i < CacheDiscardDict[mahjongOwnType].Count; i++)
+            {
+                CacheDiscardDict[mahjongOwnType][i].ReleaseAsset();
+            }
+            CacheDiscardDict[mahjongOwnType].Clear();
+        }
+        CacheDiscardDict.Clear();
+        
+        foreach (var mahjongOwnType in CacheLockDict.Keys)
+        {
+            for (int i = 0; i < CacheLockDict[mahjongOwnType].Count; i++)
+            {
+                CacheLockDict[mahjongOwnType][i].ReleaseAsset();
+            }
+            CacheLockDict[mahjongOwnType].Clear();
+        }
+        CacheLockDict.Clear();
+        
+    }
+    
 
     /// <summary>
     /// 改变庄家
@@ -152,10 +220,10 @@ public class MahjongGameManager : MonoBehaviour
     public void ChangeFarmHouse(MahjongOwnType ownType)
     {
         CurFarmHouse = ownType;
-        for (int i = 0; i < FarmHouseList.Count; i++)
-        {
-            FarmHouseList[i].SetActive(CurFarmHouse == (MahjongOwnType)i);
-        }
+        FarmHouseList[0].SetActive(CurFarmHouse == MahjongOwnType.Own);
+        FarmHouseList[1].SetActive(CurFarmHouse == MahjongOwnType.Left);
+        FarmHouseList[2].SetActive(CurFarmHouse == MahjongOwnType.Oppo);
+        FarmHouseList[3].SetActive(CurFarmHouse == MahjongOwnType.Right);
     }
 
     /// <summary>
@@ -166,7 +234,8 @@ public class MahjongGameManager : MonoBehaviour
         if(CurProgressType != MahjongProgressType.Prepare)
             return;
         CurProgressType = MahjongProgressType.Start;
-        
+
+        ChangeFarmHouse(CurFarmHouse);
         int farmHouseCount = (int)CurFarmHouse;
         //发牌
         for (int i = 0; i < 3; i++)
@@ -220,32 +289,9 @@ public class MahjongGameManager : MonoBehaviour
     /// </summary>
     /// <param name="ownType"></param>
     /// <param name="newItem"></param>
-    public void SortAndRelocationMahjong(MahjongOwnType ownType)
+    public void SortAndRelocationMahjong(MahjongOwnType ownType, bool otherIsOver = false)
     {
-        var modelList = new List<MahjongItem>();
-        switch (ownType)
-        {
-            case MahjongOwnType.Own:
-            {
-                modelList = OwnMahjongList;
-                break;   
-            }
-            case MahjongOwnType.Left:
-            {
-                modelList = LeftMahjongList;
-                break;   
-            }
-            case MahjongOwnType.Oppo:
-            {
-                modelList = OppoMahjongList;
-                break;   
-            }
-            case MahjongOwnType.Right:
-            {
-                modelList = RightMahjongList;
-                break;   
-            }
-        }
+        var modelList = GameProgress.GetCurTurnMahjongList(ownType);
         
         modelList.Sort((a,b) =>
         {
@@ -262,7 +308,13 @@ public class MahjongGameManager : MonoBehaviour
 
         for (int i = 0; i < modelList.Count; i++)
         {
+            Transform root = CreateRootList[(int)ownType - 1];
+            
+            modelList[i].transform.SetParent(root);
             modelList[i].transform.localPosition = GetMahjongVector3(i);
+            
+            if(otherIsOver)
+                modelList[i].transform.localEulerAngles = new Vector3(-90, 0, 0);
         }
         
         switch (ownType)
@@ -386,6 +438,9 @@ public class MahjongGameManager : MonoBehaviour
     /// </summary>
     public void RemoveDiscardMahjongItem(MahjongOwnType mahjongOwnType, MahjongItem mahjongItem)
     {
+        if(mahjongItem is null)
+            return;
+        
         if (CacheDiscardDict.ContainsKey(mahjongOwnType))
         {
             CacheDiscardDict[mahjongOwnType].Remove(mahjongItem);
@@ -418,7 +473,23 @@ public class MahjongGameManager : MonoBehaviour
     {
        return DiscardRootList[(int)mahjongOwnType - 1].GetChild(Index);
     }
-
+    
+    /// <summary>
+    /// 修改麻将锁定数据 碰改为杠
+    /// </summary>
+    public void ChangeLockMahjongDataPairToBar(MahjongOwnType mahjongOwnType, List<MahjongItem> curMahjongList, MahjongLockData oldLockData, int Index)
+    {
+        oldLockData.LockType = MahjongLockType.Bar;
+        oldLockData.MahjongList = curMahjongList;
+        for (int i = 0; i < oldLockData.MahjongList.Count; i++)
+        {
+            oldLockData.MahjongList[i].m_Data.Lock = MahjongLockType.Bar;
+        }
+        var mahjongLockList = GetCurLockMahjongData(mahjongOwnType);
+        mahjongLockList[Index] = oldLockData;
+        
+        ShowLockData(oldLockData, Index);
+    }
     /// <summary>
     /// 锁定麻将列表
     /// </summary>
@@ -426,6 +497,9 @@ public class MahjongGameManager : MonoBehaviour
     /// <param name="mahjongList"></param>
     public void AddLockMahjongList(MahjongOwnType mahjongOwnType, List<MahjongItem> mahjongList, MahjongLockType lockType)
     {
+        //音效
+        PlayerOperateAudio(mahjongOwnType, lockType);
+        
         List<MahjongItem> tempMahjongList = null;
         switch (mahjongOwnType)
         {
@@ -455,15 +529,16 @@ public class MahjongGameManager : MonoBehaviour
         {
             if(tempMahjongList != null && tempMahjongList.Contains(mahjongList[i]))
                 tempMahjongList.Remove(mahjongList[i]);
-            else
-            {
-                //不包含 则是从弃牌堆中拿的
-                // RemoveDiscardMahjongItem(CurFarmHouse, mahjongList[i]);
-            }
         }
 
         MahjongLockData lockData = new MahjongLockData()
             { MahjongList = mahjongList, OwnType = mahjongOwnType, LockType = lockType };
+        for (int i = 0; i < lockData.MahjongList.Count; i++)
+        {
+            lockData.MahjongList[i].m_Data.Lock = lockType;
+            lockData.MahjongList[i].m_Data.Own = mahjongOwnType;
+        }
+        
         int Index = 0;
         if (CacheLockDict.ContainsKey(mahjongOwnType))
         {
@@ -487,8 +562,6 @@ public class MahjongGameManager : MonoBehaviour
     /// </summary>
     public void ShowLockData(MahjongLockData lockData, int Index)
     {
-        Debug.Log($"{lockData.OwnType}、{lockData.LockType}、{Index}");
-        
         Transform root = LockRootList[(int)lockData.OwnType - 1].GetChild(Index);
         switch (lockData.LockType)
         {
@@ -567,6 +640,12 @@ public class MahjongGameManager : MonoBehaviour
         }
     }
     
+    public List<MahjongLockData> GetCurLockMahjongData(MahjongOwnType belongType)
+    {
+        MahjongGameManager.Instance.CacheLockDict.TryGetValue(belongType, out var resultList);
+        return resultList;
+    }
+    
     // Update is called once per frame
     void Update()
     {
@@ -575,12 +654,160 @@ public class MahjongGameManager : MonoBehaviour
         
         MahjongRemainText.text = MahjongItemList.Count.ToString();
         GameProgress.HitMahjongCheck();
+        PlayOwnList[0].SetActive(GameProgress.CurMahjongProgress == MahjongOwnType.Own);
+        PlayOwnList[1].SetActive(GameProgress.CurMahjongProgress == MahjongOwnType.Left);
+        PlayOwnList[2].SetActive(GameProgress.CurMahjongProgress == MahjongOwnType.Oppo);
+        PlayOwnList[3].SetActive(GameProgress.CurMahjongProgress == MahjongOwnType.Right);
     }
-
+    /// <summary>
+    /// 开始流程
+    /// </summary>
     public void StartProgress()
     {
         GameProgress.CurMahjongProgress = CurFarmHouse;
         
         StartCoroutine(GameProgress.ContinueProgress());
     }
+    /// <summary>
+    /// 结束流程
+    /// </summary>
+    /// <param name="belongType"></param>
+    /// <param name="mahjongItem"></param>
+    public void OverProgress(MahjongOwnType belongType, MahjongItem mahjongItem)
+    {
+        if (belongType != MahjongOwnType.None)
+        {
+            PlayWinAudio(belongType);
+            
+            //进入手牌并且重新排序
+            var mahjongList = GameProgress.GetCurTurnMahjongList(belongType);
+        
+            //自摸则不会有mahjongItem数据
+            if (mahjongItem != null)
+            {
+                
+                mahjongList.Add(mahjongItem);
+            }
+            
+            SortAndRelocationMahjong(belongType, belongType != MahjongOwnType.Own);
+        }
+            
+        //游戏结束
+        CurProgressType = MahjongProgressType.End;
+
+        GamePrepare(MahjongRule.ShenYang);
+        
+        UIUtility.LoadUIView<StartUIView>(UIType.StartUI, null);
+    }
+
+    #region 音效相关
+
+    public MahjongAudioType GetMahjongAudioType(MahjongOwnType ownType)
+    {
+        switch (ownType)
+        {
+            case MahjongOwnType.Own:
+                return MahjongAudioType.Woman;
+            case MahjongOwnType.Left:
+                return MahjongAudioType.Man;
+            case MahjongOwnType.Oppo:
+                return MahjongAudioType.Woman;
+            case MahjongOwnType.Right:
+                return MahjongAudioType.Man;
+        }
+
+        return MahjongAudioType.Man;
+    }
+    
+    /// <summary>
+    /// 播放麻将音效
+    /// </summary>
+    /// <param name="ownType"></param>
+    /// <param name="config"></param>
+    public void PlayMahjongAudio(MahjongOwnType ownType, MahjongConfig config)
+    {
+        var soundPath = ConfigUtility.SubstringAudioLoadPath(GetMahjongAudioType(ownType), config.mahjongType, config.Id);
+        AudioManager.Instance.PlaySound(soundPath);
+        AudioManager.Instance.PlayHitSound();
+    }
+    
+    /// <summary>
+    /// 播放操作音效
+    /// </summary>
+    public void PlayerOperateAudio(MahjongOwnType ownType, MahjongLockType lockType)
+    {
+        string _path = "Audio";
+        switch (GetMahjongAudioType(ownType))
+        {
+            case MahjongAudioType.Woman:
+                _path += "/Woman";
+                break;
+            case MahjongAudioType.Man:
+                _path += "/Man";
+                break;
+        }
+
+        switch (lockType)
+        {
+            case MahjongLockType.Pair:
+                _path += "/Pair";
+                break;
+            case MahjongLockType.Order:
+                _path += "/Order";
+                break;
+            case MahjongLockType.Bar:
+                _path += "/Bar";
+                break;
+            case MahjongLockType.HiddenBar:
+                _path += "/Bar";
+                break;
+        }
+        
+        AudioManager.Instance.PlaySound(_path);
+    }
+
+    public void PlayWinAudio(MahjongOwnType ownType)
+    {
+        string _path = "Audio";
+        switch (GetMahjongAudioType(ownType))
+        {
+            case MahjongAudioType.Woman:
+                _path += "/Woman/Win";
+                break;
+            case MahjongAudioType.Man:
+                _path += "/Man/Win";
+                break;
+        }
+    
+        
+        AudioManager.Instance.PlaySound(_path);
+    }
+    
+
+    #endregion
+
+    public void OnCallOppoWin()
+    {
+        var mahjongList = CacheDiscardDict[MahjongOwnType.Own];
+        
+        OverProgress(MahjongOwnType.Oppo, mahjongList[0]);
+    }
+    
+    public void OnCallBar()
+    {
+        var mahjongList = CacheDiscardDict[MahjongOwnType.Own];
+        var ownmahjongList = GameProgress.GetCurTurnMahjongList(MahjongOwnType.Oppo);
+        
+        MahjongLockData lockData = new MahjongLockData();
+        lockData.LockType = MahjongLockType.Bar;
+        lockData.OwnType = MahjongOwnType.Oppo;
+        lockData.MahjongList = new List<MahjongItem>();
+        lockData.MahjongList.Add(ownmahjongList[0]);
+        lockData.MahjongList.Add(ownmahjongList[1]);
+        lockData.MahjongList.Add(ownmahjongList[2]);
+        lockData.MahjongList.Add(mahjongList[0]);
+        
+        ShowLockData(lockData,0);
+    }
+    
 }

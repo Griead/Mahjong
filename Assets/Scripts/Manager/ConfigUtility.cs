@@ -61,6 +61,101 @@ public static class ConfigUtility
     /// 拼接加载路径
     /// </summary>
     /// <returns></returns>
+    public static string SubstringAudioLoadPath(MahjongAudioType audioType, EnumMahjongType type, int Id)
+    {
+        string path = "";
+        switch (audioType)
+        {
+            case MahjongAudioType.Woman:
+            {
+                path += $"Audio/Woman";
+                break;
+            }
+            case MahjongAudioType.Man:
+            {
+                path += $"Audio/Man";
+                break;
+            }
+        }
+        
+        switch (type)
+        {
+            case EnumMahjongType.Characters:
+            {
+                path += $"/Crak_{Id}";
+                break;
+            }
+            case EnumMahjongType.Bamboo:
+            {
+                path += $"/Bam_{Id}";
+                break;
+            }
+            case EnumMahjongType.Dot:
+            {
+                path += $"/Dot_{Id}";
+                break;
+            }
+            case EnumMahjongType.Wind:
+            {
+                path += "/Wind";
+                switch (Id)
+                {
+                    case 0:
+                    {
+                        path += "_East";
+                        break;
+                    }
+                    case 1:
+                    {
+                        path += "_South";
+                        break;
+                    }
+                    case 2:
+                    {
+                        path += "_West";
+                        break;
+                    }
+                    case 3:
+                    {
+                        path += "_North";
+                        break;
+                    }
+                }
+                break;
+            }
+            case EnumMahjongType.Dragon:
+            {
+                path += "/Dragon";
+                
+                switch (Id)
+                {
+                    case 0:
+                    {
+                        path += "_Red";
+                        break;
+                    }
+                    case 1:
+                    {
+                        path += "_Green";
+                        break;
+                    }
+                    case 2:
+                    {
+                        path += "_White";
+                        break;
+                    }
+                }
+                break;
+            }
+        }
+
+        return path;
+    }
+    
+    /// <summary>
+    /// 拼接加载路径
+    /// </summary>
+    /// <returns></returns>
     public static string SubstringLoadPath(EnumMahjongType type, int Id)
     {
         string path = "";
