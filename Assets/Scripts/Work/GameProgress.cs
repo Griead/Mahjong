@@ -56,7 +56,7 @@ public static class GameProgress
             }
 
             if (CurMahjongProgress != MahjongOwnType.Own)
-                yield return new WaitForSeconds(1);
+                yield return new WaitForSeconds(0.5f);
             
             SkipTouchMahjong = false;
             //出牌
@@ -68,7 +68,7 @@ public static class GameProgress
             //音效
             MahjongGameManager.Instance.PlayMahjongAudio(CurMahjongProgress, hitMahjongItem.m_Config);
             
-            yield return new WaitForSeconds(1);
+            yield return new WaitForSeconds(0.5f);
             
             //检测点炮
             MahjongOwnType nextOneFarmHouse = ((int)CurMahjongProgress + 1) > 4
@@ -96,28 +96,28 @@ public static class GameProgress
 
             //检测所有方 碰 杠
             
+            yield return CheckBeBar((MahjongOwnType)nextOneFarmHouse, hitMahjongItem);
+            if (CheckMahjongOperate(nextOneFarmHouse, hitMahjongItem, false))
+                continue;
             //下家
             yield return CheckBePair((MahjongOwnType)nextOneFarmHouse, hitMahjongItem);
             if (CheckMahjongOperate(nextOneFarmHouse, hitMahjongItem, true))
                 continue;
-            yield return CheckBeBar((MahjongOwnType)nextOneFarmHouse, hitMahjongItem);
-            if (CheckMahjongOperate(nextOneFarmHouse, hitMahjongItem, false))
-                continue;
             
             //对家
-            yield return CheckBePair((MahjongOwnType)nextTwoFarmHouse, hitMahjongItem);
-            if (CheckMahjongOperate(nextTwoFarmHouse, hitMahjongItem, true))
-                continue;
             yield return CheckBeBar((MahjongOwnType)nextTwoFarmHouse, hitMahjongItem);
             if (CheckMahjongOperate(nextTwoFarmHouse, hitMahjongItem, false))
                 continue;
+            yield return CheckBePair((MahjongOwnType)nextTwoFarmHouse, hitMahjongItem);
+            if (CheckMahjongOperate(nextTwoFarmHouse, hitMahjongItem, true))
+                continue;
             
             //上家
-            yield return CheckBePair((MahjongOwnType)nextThreeFarmHouse, hitMahjongItem);
-            if (CheckMahjongOperate(nextThreeFarmHouse, hitMahjongItem, true))
-                continue;
             yield return CheckBeBar((MahjongOwnType)nextThreeFarmHouse, hitMahjongItem);
             if (CheckMahjongOperate(nextThreeFarmHouse, hitMahjongItem, false))
+                continue;
+            yield return CheckBePair((MahjongOwnType)nextThreeFarmHouse, hitMahjongItem);
+            if (CheckMahjongOperate(nextThreeFarmHouse, hitMahjongItem, true))
                 continue;
 
             //检测 下家吃

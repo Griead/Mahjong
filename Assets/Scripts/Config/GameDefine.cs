@@ -19,4 +19,9 @@ public struct GameDefine
     /// 麻将间间隔
     /// </summary>
     public const int MahjongInterval = 7;
+    
+    /// <summary>
+    /// 背景音乐加载路径
+    /// </summary>
+    public const string BGMLoadPath = "Audio/BGM";
 }

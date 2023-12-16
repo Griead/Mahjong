@@ -90,6 +90,7 @@ public class MahjongGameManager : MonoBehaviour
         CacheDiscardDict = new Dictionary<MahjongOwnType, List<MahjongItem>>();
         CacheLockDict = new Dictionary<MahjongOwnType, List<MahjongLockData>>();
         
+        AudioManager.Instance.PlayBackgroundMusic(GameDefine.BGMLoadPath);
         GamePrepare(MahjongRule.ShenYang);
     }
     

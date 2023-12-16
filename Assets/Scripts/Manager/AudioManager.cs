@@ -23,7 +23,7 @@ public class AudioManager :MonoBehaviour
             m_MahjongHitEffectAudioSource.volume = 0.2f;
             
             m_BackGroundEffectAudioSource = gameObject.AddComponent<AudioSource>();
-            m_BackGroundEffectAudioSource.volume = 0.2f;
+            m_BackGroundEffectAudioSource.volume = 0.1f;
             m_BackGroundEffectAudioSource.loop = true;
             m_AudioClipDict = new Dictionary<string, AudioClip>();
         }
